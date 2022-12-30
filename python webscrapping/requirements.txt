@@ -1,0 +1,4 @@
+tkinter
+selenium=>4.5.0
+pandas=>1.4.3
+python3=>3.9.6
