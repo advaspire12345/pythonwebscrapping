@@ -77,17 +77,6 @@ orig_height = 0
 len_keywords = 0
 len_keywords_2 = 0
 
-options = Options()
-options.add_argument('--disable-notifications')
-driver = None
-action = ActionChains(driver)
-
-driver = webdriver.Chrome(options=options)
-websitePath = "https://www.facebook.com/"
-
-driver.get(websitePath)
-driver.maximize_window()
-
 # App Class
 class App(ctk.CTk):
 
@@ -96,7 +85,7 @@ class App(ctk.CTk):
         super().__init__(*args, **kwargs)
  
         # Sets the title of the window
-        self.title("ONES PLATFORM WEBSCRAPPING APP")  
+        self.title("ONES PLATFORM WEBSCRAPPING APP")
         # Sets the dimensions of the window
         self.geometry(f"{appWidth}x{appHeight}")   
  
@@ -113,8 +102,6 @@ class App(ctk.CTk):
         
         if USERNAME != "username":
             self.usernameEntry.insert(0, USERNAME)
-
-        self.usernameEntry.bind("<<FocusOut>>", self.on_entry_focus_out)
 
         self.usernameEntry.grid(row=0, column=1,
                             columnspan=3, padx=20,
@@ -138,27 +125,15 @@ class App(ctk.CTk):
                            pady=20, sticky="ew")
  
         # Login Button
-        self.loginButton = ctk.CTkButton(self,
+        self.startButton = ctk.CTkButton(self,
                                          text="Login",
-                                         command=self.login_attempt_process,
+                                         command=self.sponsor_start,
                                          state="normal",
                                          fg_color="green",
                                          hover_color="darkgreen")
-        self.loginButton.grid(row=5,
+        self.startButton.grid(row=5,
                                 columnspan=2, padx=20,
                                 pady=20, sticky="ew")
-
-        # Start Button
-        self.startButton = ctk.CTkButton(self,
-                                         text="Start Scrapping",
-                                         command=self.sponsor_start,
-                                         state="disabled")
-        self.startButton.grid(row=6,
-                                columnspan=2, padx=20,
-                                pady=20, sticky="ew")
-        
-        # Define a shared login_attempt variable
-        self.login_attempt = multiprocessing.Value('i', 0)
  
         # Display Box
         self.displayBox = ctk.CTkTextbox(self,
@@ -175,11 +150,6 @@ class App(ctk.CTk):
         self.grid_columnconfigure(1, weight=1)
 
         self.display_queue = multiprocessing.Queue()
-
-    def on_entry_focus_out(self, event):
-        # Retrieve the content of the entry field
-        new_username = self.usernameEntry.get()
-        print("New username:", new_username)
   
     def show_popup(self):
         # Show the popup message box
@@ -192,9 +162,6 @@ class App(ctk.CTk):
     def display_text_output(self):
 
         global display_text
-
-        with self.login_attempt.get_lock():
-            login_attempt_value = self.login_attempt.value
 
         while not self.display_queue.empty():
             text = self.display_queue.get()
@@ -211,16 +178,10 @@ class App(ctk.CTk):
             self.displayBox.insert(tk.END, output_text)
             self.displayBox.configure(state="disabled")
 
-        if login_attempt_value == True and self.startButton._state != "normal":
-            self.startButton.configure(state="normal")
+            # Always scroll down to bottom
+            self.displayBox.yview_moveto(1.0)
 
     def sponsor_start(self):
-        global driver
-        scrap_data = [self.usernameEntry.get(), self.pwEntry.get()]
-        sponsor_process = multiprocessing.Process(target=inizializer, args=(driver, scrap_data, self.display_queue))
-        sponsor_process.start()
-
-    def login_attempt_process(self):
 
         username = self.usernameEntry.get()
         password = self.pwEntry.get()
@@ -238,28 +199,31 @@ class App(ctk.CTk):
             with open("userlist.txt", "w") as file:
                 file.write("\n".join(user_info))
 
-            with open("userlist.txt", "r") as file:
-                test_print_user = file.read()
-        global driver
-        scrap_data = [self.usernameEntry.get(), self.pwEntry.get()]
-        login_process = multiprocessing.Process(target=login, args=(driver, scrap_data, self.display_queue, self.login_attempt))
-        login_process.start()
+        scrap_data = [username, password]
+        sponsor_process = multiprocessing.Process(target=inizializer, args=(scrap_data, self.display_queue))
+        sponsor_process.start()
 
-def login(driver, scrap_data, display_queue, login_attempt):
+def inizializer(scrap_data, display_queue):
 
     def print_output(t):
         display_queue.put(t)
+    
+    # Set up driver
 
-    # USERNAME = "leehoiching22@gmail.com"
-    # PASSWORD = "OPLeHoCi!735@"
+    sleep(0.5)
+    options = Options()
+    options.add_argument('--disable-notifications')
+    driver = webdriver.Chrome(options=options)
+    action = ActionChains(driver)
 
-    # USERNAME = "liewkokkheong@gmail.com"
-    # PASSWORD = "ONESLiKoKh!4457@"
+    websitePath = "https://www.facebook.com/"
+    driver.get(websitePath)
+    driver.maximize_window()
 
     USERNAME = scrap_data[0]
     PASSWORD = scrap_data[1]
 
-    # print_output(PATH)
+    # Logging in with username and password
     print_output("Logging in with: " + USERNAME)
     print_output("Login process on-going....")
 
@@ -296,21 +260,16 @@ def login(driver, scrap_data, display_queue, login_attempt):
             approval_code = ""
             print_output("Done Verification!")
 
+    login_confirm = None
+
+    while login_confirm is None or login_confirm.lower() in ["n", "no"]:
+        login_confirm = tk.simpledialog.askstring(title="Login check?", 
+                                                        prompt="Login completed?\n'Yes' = y, 'No' = n")
+
     sleep(0.5)
-
-    App().show_popup()
-
-    with login_attempt.get_lock():
-            login_attempt.value = 1
 
     print_output("Login Successfully!")
-
-def inizializer(driver, scrap_data, display_queue):
-
-    def print_output(t):
-        display_queue.put(t)
-    
-    sleep(0.5)
+    print("Login Successfully!")
 
     # Only Scrap Ads posts
     NEWSFEED_SCRAPER = True
@@ -387,18 +346,13 @@ def inizializer(driver, scrap_data, display_queue):
         alphabet = string.ascii_letters + string.digits
         rand = ''.join(secrets.choice(alphabet) for i in range(32))
         # now that we have the preliminary stuff out of the way time to get that image :D
-        location = element.location
-        print_output('location: ' + str(location))
         size = element.size
         png = driver.get_screenshot_as_png()  # saves screenshot of entire page
         # print_output(png)
         im = Image.open(BytesIO(png))  # uses PIL library to open image in memory
 
-        print_output('location x:' + str(location['x']) + 'location y:' + str(location['y']))
-        print_output('zoom width:' + str(size['width']) + ', zoom height:' + str(size['height']))
-
         # default settings 
-        top = 2
+        top = 0
         left = 580
         adj_width = size['width'] + 150
         adj_height = size['height'] + 150
@@ -409,28 +363,32 @@ def inizializer(driver, scrap_data, display_queue):
             if len_keywords > 2:
                 top = 180
             else:
-                top = 230
+                top = 200
 
-            left = 605
-            adj_width = size['width'] + 140
-            adj_height = 112 + (67 * (len_keywords - 1))
+            left = 535
+            adj_width = size['width']
+            adj_height = 162 + (67 * (len_keywords - 1))
             print_output('keywords length:' + str(len_keywords))
 
             if 'why_ads_more' in save_file:
-                top = 2
+                top = 1
                 adj_height = 880
 
         elif 'post' in save_file or 'copywriting' in save_file:
 
+            location = element.location
             # When screenshooting the ads post
             # when size is 100%
             top = 2
 
-            if orig_height < 696:
+            print_output('location x:' + str(location['x']) + 'location y:' + str(location['y']))
+            print_output('zoom width:' + str(size['width']) + ', zoom height:' + str(size['height']))
+
+            if orig_height < 900:
                 if save_file == 'post':
-                    adj_width = size['width'] + 150
-                    adj_height = size['height'] + 150
-                    left = 580
+                    adj_width = size['width']
+                    adj_height = size['height'] + 5
+                    left = 610
                 elif save_file == 'copywriting':
                     adj_width = size['width'] + 150
                     adj_height = size['height'] + 150
@@ -438,7 +396,7 @@ def inizializer(driver, scrap_data, display_queue):
                 # Class = 'x78zum5 xdt5ytf xz62fqu x16ldp7u'
 
             # when size is 67%
-            elif orig_height > 696 and orig_height < 834:
+            elif orig_height > 900 and orig_height < 1000:
                 adj_width = 560
                 adj_height = int(size['height'] * 0.794)
                 if adj_height > 880:
@@ -638,11 +596,12 @@ def inizializer(driver, scrap_data, display_queue):
                             #auto_size(e)
                             orig_height = e.size['height']
                             print_output("orig_height:" + str(orig_height))
+                            print_output("Line 598 Done")
 
-                            if orig_height < 696:
+                            if orig_height <= 900:
                                 pass
 
-                            elif orig_height > 696 and orig_height < 834:
+                            elif orig_height > 900 and orig_height < 1000:
                                 print_output('Zoom Out')
                                 zoom_out(67)
 
@@ -652,11 +611,12 @@ def inizializer(driver, scrap_data, display_queue):
 
                             driver.execute_script('arguments[0].scrollIntoView();', el[-1])
                             action.move_to_element(menu_dots[0])
+                            print_output("Line 613 Done")
 
                             #for 100% view
-                            if orig_height < 696:
+                            if orig_height < 900:
 
-                                action.scroll_by_amount(0, -35) 
+                                action.scroll_by_amount(0, -40) 
 
                             #for view that is less than 67%
                             else:
@@ -671,6 +631,7 @@ def inizializer(driver, scrap_data, display_queue):
                             sleep(0.1)
                             print_output("clicking the menu dot")
                             sleep(0.5)
+                            print_output("Line 635 Done")
 
                             do_screenshot(e, 'post')
                             print_output("doing screenshot")
@@ -682,10 +643,22 @@ def inizializer(driver, scrap_data, display_queue):
                             zoom_in()
 
                             driver.execute_script('arguments[0].scrollIntoView();', el[-1])
+
+                            # reset position
+                            if orig_height < 900:
+
+                                action.scroll_by_amount(0, -40) 
+
+                            #for view that is less than 67%
+                            else:
+
+                                action.scroll_by_amount(0, -20) 
+                            
                             action.move_to_element(menu_dots[0])
                             action.click(menu_elem).perform()
                             sleep(0.5)
                             print_output("clicking the menu dot")
+                            print_output("Line 651 Done")
                             has_embed = False
                             has_video = False
 
@@ -753,7 +726,7 @@ def inizializer(driver, scrap_data, display_queue):
                                 sleep(1)
 
                             action.click(menu_dots[0]).perform()
-
+                            print_output("Line 719 Done")
                             # Keywords starts
 
                             why = None
@@ -762,10 +735,16 @@ def inizializer(driver, scrap_data, display_queue):
                                     why = e.find_element(By.XPATH, "//span[text() = 'Why am I seeing this ad?']")
                                     why.click()
                                     sleep(1)
-                                    why_box = e.find_element(By.XPATH,'//div[@role="dialog"]')
+                                    wait = WebDriverWait(driver, 10)
+                                    why_box = wait.until(EC.visibility_of_element_located((By.XPATH, '//div[@role="dialog"]')))
+                                    print_output("Why_box found!")
+                                    print_output("why_box: " + str(why_box))
+                                    break
                                 
                                 except:
                                     sleep(0.5)
+
+                            print_output("Why_box width:" + str(why_box.size['width']) + ", height:" + str(why_box.size['height']))
 
                             LIST_KEYWORDS_ONE = []
                             keywords_one = e.find_elements(By.XPATH,
@@ -777,12 +756,14 @@ def inizializer(driver, scrap_data, display_queue):
 
                             len_keywords = len(LIST_KEYWORDS_ONE)
 
-                            action.scroll_by_amount(0, 20) 
+                            # action.scroll_by_amount(0, 20)
+                            print_output("Line 742 Done")
 
                             if why != None:
-
+                                
                                 do_screenshot(why_box, "why_ads")
                                 sleep(1)
+                                print_output("Screentshot why_ads done Line 748")
 
                                 if 'more' in LIST_KEYWORDS_ONE[0]:
                                     action.click(keywords_one[0]).perform()
@@ -824,7 +805,7 @@ def inizializer(driver, scrap_data, display_queue):
                             action.click(menu_dots[0]).perform()
 
                             why_image = upload_image('why_ads.png')
-
+                            print_output("Why ads Completed!")
                             sleep(3)
                         
                         more_text = e.find_elements(By.XPATH, ".//div[text()[contains(., 'See more')]]")
