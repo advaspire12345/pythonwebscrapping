@@ -76,6 +76,7 @@ zoom_ratio = 0
 orig_height = 0
 len_keywords = 0
 len_keywords_2 = 0
+popup_box_loc = []
 
 # App Class
 class App(ctk.CTk):
@@ -148,6 +149,7 @@ class App(ctk.CTk):
 
         # Set the column width to fill up 100% horizontally
         self.grid_columnconfigure(1, weight=1)
+        self.grid_rowconfigure(7, weight=1)
 
         self.display_queue = multiprocessing.Queue()
   
@@ -268,6 +270,14 @@ def inizializer(scrap_data, display_queue):
 
     sleep(0.5)
 
+    pic = driver.get_screenshot_as_png()  # saves screenshot of entire page
+        # print_output(png)
+    pictest = Image.open(BytesIO(pic))  # uses PIL library to open image in memory
+
+    piccrop = pictest.crop((680, 150, 1227, 780))
+
+    piccrop.save('pictest.png')  # saves new cropped image
+
     print_output("Login Successfully!")
     print("Login Successfully!")
 
@@ -337,15 +347,23 @@ def inizializer(scrap_data, display_queue):
 
     NO_MORE_POSTS = False
 
+    def screenshot(save_file, left, top, width, height):
+        png = driver.get_screenshot_as_png()
+        im = Image.open(BytesIO(png))
+        right = left + width
+        bottom = top + height
+        print_output(save_file + "'s x1:" + str(left) + ', y1:' + str(top) + ', x2:' + str(right) + ', y2:' + str(bottom))
+        cropped = im.crop((left, top, right, bottom))
+        cropped.save(f'{save_file}.png')  # saves new cropped image
+
     def do_screenshot(element, save_file):
         global orig_height
         global len_keywords
         global len_keywords_2
-        import string
-        import secrets
-        alphabet = string.ascii_letters + string.digits
-        rand = ''.join(secrets.choice(alphabet) for i in range(32))
+        global popup_box_loc
         # now that we have the preliminary stuff out of the way time to get that image :D
+        # why_x = popup_box_loc['x']
+        # why_y = popup_box_loc['y']
         size = element.size
         png = driver.get_screenshot_as_png()  # saves screenshot of entire page
         # print_output(png)
@@ -365,9 +383,14 @@ def inizializer(scrap_data, display_queue):
             else:
                 top = 200
 
-            left = 535
-            adj_width = size['width']
-            adj_height = 162 + (67 * (len_keywords - 1))
+            # left = 535
+            # adj_width = size['width']
+            # adj_height = 162 + (67 * (len_keywords - 1))
+
+            left = 100
+            adj_width = 500
+            adj_height = 800
+
             print_output('keywords length:' + str(len_keywords))
 
             if 'why_ads_more' in save_file:
@@ -380,9 +403,6 @@ def inizializer(scrap_data, display_queue):
             # When screenshooting the ads post
             # when size is 100%
             top = 2
-
-            print_output('location x:' + str(location['x']) + 'location y:' + str(location['y']))
-            print_output('zoom width:' + str(size['width']) + ', zoom height:' + str(size['height']))
 
             if orig_height < 900:
                 if save_file == 'post':
@@ -413,11 +433,8 @@ def inizializer(scrap_data, display_queue):
 
         right = left + adj_width
         bottom = top + adj_height
-        # hash_ = random.getrandbits(128)
-        # w, h = im.size
-        # im_crop = im.crop((left, upper, right, lower))
-        print_output('x1:' + str(left) + ', y1:' + str(top) + ', x2:' + str(right) + ', y2:' + str(bottom))
-        print_output('width:' + str(adj_width) + ', height:' + str(adj_height))
+        print_output(save_file + "'s x1:" + str(left) + ', y1:' + str(top) + ', x2:' + str(right) + ', y2:' + str(bottom))
+        print_output(save_file + "'s width:" + str(adj_width) + ', height:' + str(adj_height))
         cropped = im.crop((left, top, right, bottom))
         # print_output(im)
         cropped.save(f'{save_file}.png')  # saves new cropped image
@@ -730,11 +747,12 @@ def inizializer(scrap_data, display_queue):
                             # Keywords starts
 
                             why = None
+
                             for i in range(10):
                                 try:
                                     why = e.find_element(By.XPATH, "//span[text() = 'Why am I seeing this ad?']")
                                     why.click()
-                                    sleep(1)
+                                    sleep(0.1)
                                     wait = WebDriverWait(driver, 10)
                                     why_box = wait.until(EC.visibility_of_element_located((By.XPATH, '//div[@role="dialog"]')))
                                     print_output("Why_box found!")
@@ -745,13 +763,43 @@ def inizializer(scrap_data, display_queue):
                                     sleep(0.5)
 
                             print_output("Why_box width:" + str(why_box.size['width']) + ", height:" + str(why_box.size['height']))
+                            print_output("Why_box x:" + str(why_box.location['x']) + ", y:" + str(why_box.location['y']))
+                            width = why_box.size['width']
+                            height = why_box.size['height']
+                            screenshot("why_ads", 580, 150, width, height)
 
                             LIST_KEYWORDS_ONE = []
-                            keywords_one = e.find_elements(By.XPATH,
-                                                           '//div[@role="dialog"]//div[@data-visualcompletion="ignore-dynamic"]')
+
+                            wait = WebDriverWait(e, 10)
+
+                            advertiser_choice = wait.until(EC.presence_of_all_elements_located(
+                                                    (By.XPATH, 
+                                                     '//div[@role="dialog"]//div[@data-visualcompletion="ignore-dynamic"]//div[@role="button"]')))
+                    
+                            # Click the Advertiser Choice to find out the keywords of 'why am I seeing this ads'
+                            advertiser_choice_btn = wait.until(EC.element_to_be_clickable(advertiser_choice[0]))
+                            action.move_to_element(advertiser_choice[0])
+                            action.click(advertiser_choice_btn).perform()
+
+                            keywords_one = wait.until(EC.presence_of_all_elements_located(
+                                                    (By.XPATH, 
+                                                    '//div[@class="xw2csxc x1mzt3pk x1a8lsjc xexx8yu x3ak3fx x1fj9vlw x114jws4 x1odjw0f"]//div[@data-visualcompletion="ignore-dynamic"]')))
+
+                            # keywords_one = wait.until(EC.presence_of_all_elements_located(
+                            #                         (By.XPATH, 
+                            #                         '//div[@role="dialog"]//div[@data-visualcompletion="ignore-dynamic"]')))
+                        
+                            sleep(1)
+
+                            print_output("length of keywords_one: " + str(len(keywords_one)))
+
+                            # for element in keywords_one:
+                            #     print_output(str(element.get_attribute("outerHTML")))
+                            # 'xw2csxc x1mzt3pk x1a8lsjc xexx8yu x3ak3fx x1fj9vlw x114jws4 x1odjw0f'
+
                             for i in keywords_one:
-                                if len(i.text) < 60:
-                                    LIST_KEYWORDS_ONE.append(i.text)
+                                # if len(i.text) < 60:
+                                LIST_KEYWORDS_ONE.append(i.text)
                             print_output("PART 1 KEYWORDS: " + ",".join(LIST_KEYWORDS_ONE))
 
                             len_keywords = len(LIST_KEYWORDS_ONE)
