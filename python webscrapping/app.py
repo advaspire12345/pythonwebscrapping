@@ -494,7 +494,7 @@ def inizializer(scrap_data, display_queue):
 
     def zoom_in():
 
-        driver.execute_script("document.body.style.zoom = '';")
+        driver.execute_script("document.body.removeAttribute('style');")
         sleep(0.5)
 
     def find_sponsored_posts(times):
@@ -743,7 +743,7 @@ def inizializer(scrap_data, display_queue):
                                 sleep(1)
 
                             action.click(menu_dots[0]).perform()
-                            print_output("Line 719 Done")
+                            print_output("Line 746 Done")
                             # Keywords starts
 
                             why = None
@@ -805,13 +805,13 @@ def inizializer(scrap_data, display_queue):
                             len_keywords = len(LIST_KEYWORDS_ONE)
 
                             # action.scroll_by_amount(0, 20)
-                            print_output("Line 742 Done")
+                            print_output("Line 808 Done")
 
                             if why != None:
                                 
-                                do_screenshot(why_box, "why_ads")
+                                # do_screenshot(why_box, "why_ads")
                                 sleep(1)
-                                print_output("Screentshot why_ads done Line 748")
+                                print_output("Done Line 814")
 
                                 if 'more' in LIST_KEYWORDS_ONE[0]:
                                     action.click(keywords_one[0]).perform()
