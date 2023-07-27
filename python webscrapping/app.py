@@ -168,8 +168,8 @@ class App(ctk.CTk):
         while not self.display_queue.empty():
             text = self.display_queue.get()
             display_text.append(text)
-            if len(display_text) > 50:
-                display_text.pop(0)
+            # if len(display_text) > 50:
+            #     display_text.pop(0)
             if len(display_text) > 1:
                 output_text = "\n".join(display_text)
             else:
@@ -270,14 +270,15 @@ def inizializer(scrap_data, display_queue):
 
     sleep(0.5)
 
-    pic = driver.get_screenshot_as_png()  # saves screenshot of entire page
-        # print_output(png)
-    pictest = Image.open(BytesIO(pic))  # uses PIL library to open image in memory
+    # pic = driver.get_screenshot_as_png()  # saves screenshot of entire page
+    #     # print_output(png)
+    # pictest = Image.open(BytesIO(pic))  # uses PIL library to open image in memory
 
-    piccrop = pictest.crop((680, 150, 1227, 780))
+    # piccrop = pictest.crop((680, 150, 1227, 780))
 
-    piccrop.save('pictest.png')  # saves new cropped image
+    # piccrop.save('pictest.png')  # saves new cropped image
 
+    driver.execute_script("document.body.style.zoom = '';")
     print_output("Login Successfully!")
     print("Login Successfully!")
 
@@ -369,67 +370,13 @@ def inizializer(scrap_data, display_queue):
         # print_output(png)
         im = Image.open(BytesIO(png))  # uses PIL library to open image in memory
 
-        # default settings 
-        top = 0
-        left = 580
-        adj_width = size['width'] + 150
-        adj_height = size['height'] + 150
-
-        # when screenshooting the 'why am I seeing this ad?'
-        if 'why_ads' in save_file:
-
-            if len_keywords > 2:
-                top = 180
-            else:
-                top = 200
-
-            # left = 535
-            # adj_width = size['width']
-            # adj_height = 162 + (67 * (len_keywords - 1))
-
-            left = 100
-            adj_width = 500
-            adj_height = 800
-
-            print_output('keywords length:' + str(len_keywords))
-
-            if 'why_ads_more' in save_file:
-                top = 1
-                adj_height = 880
-
-        elif 'post' in save_file or 'copywriting' in save_file:
-
-            location = element.location
-            # When screenshooting the ads post
-            # when size is 100%
-            top = 2
-
-            if orig_height < 900:
-                if save_file == 'post':
-                    adj_width = size['width']
-                    adj_height = size['height'] + 5
-                    left = 610
-                elif save_file == 'copywriting':
-                    adj_width = size['width'] + 150
-                    adj_height = size['height'] + 150
-                    left = 580
-                # Class = 'x78zum5 xdt5ytf xz62fqu x16ldp7u'
-
-            # when size is 67%
-            elif orig_height > 900 and orig_height < 1000:
-                adj_width = 560
-                adj_height = int(size['height'] * 0.794)
-                if adj_height > 880:
-                    adj_height = 880
-                left = 667
-
-            # when size is 50%
-            else:
-                adj_width = 430
-                adj_height = int(size['height'] * 0.605)
-                if adj_height > 880:
-                    adj_height = 880
-                left = 735
+        location = element.location
+        # When screenshooting the ads post
+        # when size is 100%
+        top = 2
+        adj_width = size['width']
+        adj_height = size['height'] + 5
+        left = location['x']
 
         right = left + adj_width
         bottom = top + adj_height
@@ -494,7 +441,7 @@ def inizializer(scrap_data, display_queue):
 
     def zoom_in():
 
-        driver.execute_script("document.body.removeAttribute('style');")
+        driver.execute_script("document.body.style.zoom = '';")
         sleep(0.5)
 
     def find_sponsored_posts(times):
@@ -615,67 +562,77 @@ def inizializer(scrap_data, display_queue):
                             print_output("orig_height:" + str(orig_height))
                             print_output("Line 598 Done")
 
-                            if orig_height <= 900:
-                                pass
+                            test_zoom_out = False
+                            # if orig_height <= 900:
+                            #     pass
 
-                            elif orig_height > 900 and orig_height < 1000:
-                                print_output('Zoom Out')
+                            # elif orig_height > 900 and orig_height < 1000:
+                            #     print_output('Zoom Out')
+                            if test_zoom_out == True:
                                 zoom_out(67)
 
-                            else:
-                                print_output('Zoom In')
-                                zoom_out(50)
+                            # else:
+                            #     print_output('Zoom In')
+                            #     zoom_out(50)
 
                             driver.execute_script('arguments[0].scrollIntoView();', el[-1])
-                            action.move_to_element(menu_dots[0])
-                            print_output("Line 613 Done")
+
+                            if test_zoom_out == True:
+                                action.scroll_by_amount(0, -20)
+                            else:
+                                action.move_to_element(menu_dots[0])
+
+                            print_output("Zoom Out")
 
                             #for 100% view
-                            if orig_height < 900:
+                            # if orig_height < 900:
 
-                                action.scroll_by_amount(0, -40) 
+                            #     action.scroll_by_amount(0, -40) 
 
-                            #for view that is less than 67%
-                            else:
+                            # #for view that is less than 67%
+                            # else:
 
-                                action.scroll_by_amount(0, -20) 
+                            #     action.scroll_by_amount(0, -20) 
 
-                            sleep(1)
-                            print_output("moving to menu dot")
-                            action.click(menu_elem).perform()
-                            sleep(0.1)
-                            action.click(menu_elem).perform()
-                            sleep(0.1)
-                            print_output("clicking the menu dot")
-                            sleep(0.5)
-                            print_output("Line 635 Done")
+                            if test_zoom_out == False:
+                                sleep(1)
+                                print_output("moving to menu dot")
+                                action.click(menu_elem).perform()
+                                sleep(0.1)
+                                action.click(menu_elem).perform()
+                                sleep(0.1)
+                                print_output("clicking the menu dot")
+                                sleep(0.5)
+                                print_output("Line 635 Done")
+
+                            if test_zoom_out == True:
+                                sleep(3)
 
                             do_screenshot(e, 'post')
                             print_output("doing screenshot")
                             sleep(0.5)
+                            zoom_in()
 
                             first_look_img = upload_image('post.png')
 
-                            #zoom('in', zoom_ratio)
-                            zoom_in()
+                            # #zoom('in', zoom_ratio)
+                            # zoom_in()
 
                             driver.execute_script('arguments[0].scrollIntoView();', el[-1])
 
                             # reset position
-                            if orig_height < 900:
+                            # if orig_height < 900:
 
-                                action.scroll_by_amount(0, -40) 
+                            #     action.scroll_by_amount(0, -40) 
 
-                            #for view that is less than 67%
-                            else:
+                            # #for view that is less than 67%
+                            # else:
 
-                                action.scroll_by_amount(0, -20) 
+                            #     action.scroll_by_amount(0, -20) 
                             
                             action.move_to_element(menu_dots[0])
                             action.click(menu_elem).perform()
                             sleep(0.5)
-                            print_output("clicking the menu dot")
-                            print_output("Line 651 Done")
                             has_embed = False
                             has_video = False
 
@@ -752,21 +709,10 @@ def inizializer(scrap_data, display_queue):
                                 try:
                                     why = e.find_element(By.XPATH, "//span[text() = 'Why am I seeing this ad?']")
                                     why.click()
-                                    sleep(0.1)
-                                    wait = WebDriverWait(driver, 10)
-                                    why_box = wait.until(EC.visibility_of_element_located((By.XPATH, '//div[@role="dialog"]')))
-                                    print_output("Why_box found!")
-                                    print_output("why_box: " + str(why_box))
                                     break
                                 
                                 except:
                                     sleep(0.5)
-
-                            print_output("Why_box width:" + str(why_box.size['width']) + ", height:" + str(why_box.size['height']))
-                            print_output("Why_box x:" + str(why_box.location['x']) + ", y:" + str(why_box.location['y']))
-                            width = why_box.size['width']
-                            height = why_box.size['height']
-                            screenshot("why_ads", 580, 150, width, height)
 
                             LIST_KEYWORDS_ONE = []
 
@@ -784,6 +730,16 @@ def inizializer(scrap_data, display_queue):
                             keywords_one = wait.until(EC.presence_of_all_elements_located(
                                                     (By.XPATH, 
                                                     '//div[@class="xw2csxc x1mzt3pk x1a8lsjc xexx8yu x3ak3fx x1fj9vlw x114jws4 x1odjw0f"]//div[@data-visualcompletion="ignore-dynamic"]')))
+
+                            sleep(3)
+                            why_box = wait.until(EC.presence_of_all_elements_located((By.XPATH, '//div[@role="dialog"]')))
+                            print_output("Why_box width:" + str(why_box[0].size['width']) + ", height:" + str(why_box[0].size['height']))
+                            print_output("Why_box x:" + str(why_box[0].location['x']) + ", y:" + str(why_box[0].location['y']))
+                            why_x = why_box[0].location['x']
+                            why_y = why_box[0].location['y']
+                            width = why_box[0].size['width']
+                            height = why_box[0].size['height']
+                            screenshot("why_ads", why_x, why_y, width, height)
 
                             # keywords_one = wait.until(EC.presence_of_all_elements_located(
                             #                         (By.XPATH, 
@@ -817,38 +773,31 @@ def inizializer(scrap_data, display_queue):
                                     action.click(keywords_one[0]).perform()
                                     sleep(1)
                                     LIST_KEYWORDS_TWO = []
-                                    keywords_one = e.find_elements(By.XPATH,
-                                                                '//div[@role="dialog"]//div[@data-visualcompletion="ignore-dynamic"]')
+                                    keywords_one = wait.until(EC.presence_of_all_elements_located(
+                                                    (By.XPATH, '//div[@role="dialog"]//div[@data-visualcompletion="ignore-dynamic"]')))
                                     for i in keywords_one:
                                         if len(i.text) < 60:
                                             keyword_text = i.text.split('\n')[0]
                                             LIST_KEYWORDS_TWO.append(keyword_text)
 
-                                    while "" in keyword_text:
-                                        keyword_text.remove("")
+                                    # while "" in keyword_text:
+                                    #     keyword_text.remove("")
 
                                     print_output("PART 2 KEYWORDS: " + ",".join(LIST_KEYWORDS_TWO))
 
                                     len_keywords_2 = len(LIST_KEYWORDS_TWO)
                                     sleep(3)
 
-                                    if len_keywords_2 > 6:
-                                        action.scroll_by_amount(0, 100)
-                                        sleep(3)
+                                    why_box = wait.until(EC.presence_of_all_elements_located((By.XPATH, '//div[@role="dialog"]')))
+                                    print_output("Why_box width:" + str(why_box[0].size['width']) + ", height:" + str(why_box[0].size['height']))
+                                    print_output("Why_box x:" + str(why_box[0].location['x']) + ", y:" + str(why_box[0].location['y']))
+                                    why_x = why_box[0].location['x']
+                                    why_y = why_box[0].location['y']
+                                    width = why_box[0].size['width']
+                                    height = why_box[0].size['height']
+                                    screenshot("why_ads1", why_x, why_y, width, height)
 
-                                    why = None
-                                    for i in range(10):
-                                        try:
-                                            why = e.find_element(By.XPATH, "//span[text() = 'Why am I seeing this ad?']")
-                                            why.click()
-                                            sleep(1)
-                                            why_box = e.find_element(By.XPATH,'//div[@role="dialog"]')
-                                
-                                        except:
-                                            sleep(0.5)
-
-                                    do_screenshot(why_box, "why_ads_more")
-                                    sleep(3)
+                                    sleep(1)
 
                             action.click(menu_dots[0]).perform()
 
@@ -860,18 +809,14 @@ def inizializer(scrap_data, display_queue):
 
                         if len(more_text):
                             driver.execute_script('arguments[0].click()', more_text[0])
-                            sleep(0.5)
+                            sleep(3)
 
-                        for i in range(10):
-                            try:
-                                print_output('locating copywriting box')
-                                copywriting_box = e.find_element(By.XPATH,'.//span[@class="x193iq5w xeuugli x13faqbe x1vvkbs x1xmvt09 x1lliihq x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x xudqn12 x3x7a5m x6prxxf xvq8zen xo1l8bm xzsf02u x1yc453h"]')
-                            except:
-                                sleep(0.5)
-                        
+                        copywriting_box = e
+
                         sleep(1)
                         if copywriting_box:
                             print_output("Copywriting box found, height:" + str(copywriting_box.size['height']))
+
                         do_screenshot(copywriting_box, 'copywriting')
 
                         ad_msg = e.find_elements(By.CSS_SELECTOR, 'div[data-ad-preview="message"]')
@@ -930,7 +875,8 @@ def inizializer(scrap_data, display_queue):
                             # print_output('Send Data through API')
                             # sleep(3)
                         
-                        print_output(POSTS[0])
+                        print_output("Test printing the post")
+                        print_output(str(POSTS[0]))
                         data_ID = send_data('data', POSTS[0])
                         sleep(3)
                         print_output("data_ID recorded:" + str(data_ID))
